@@ -1,0 +1,22 @@
+
+# QNX Momentics Build
+build/
+*/build/
+*/o/
+*.o
+*.a
+*.so
+*.elf
+*.map
+
+# binaries
+qnx-rc-car-safety-system
+
+# Eclipse / Momentics
+.settings/
+.metadata/
+*.launch
+
+# Other
+.DS_Store
+Thumbs.db
