@@ -15,7 +15,7 @@ qnx-rc-car-safety-system
 # Eclipse / Momentics
 .settings/
 .metadata/
-*.launch
+# *.launch # Keep .launch files for running/debugging configurations
 
 # Other
 .DS_Store
