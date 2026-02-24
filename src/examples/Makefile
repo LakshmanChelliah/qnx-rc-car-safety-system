@@ -3,7 +3,10 @@
 # =========================================================
 
 # 1. List every file in your project that has a main() function
-MAIN_SRCS = src/example_servo_control.cpp src/example_motor_control.cpp src/example_file_lock.cpp
+MAIN_SRCS = src/example_servo_control.cpp \
+	src/example_motor_control.cpp \
+	src/example_file_lock.cpp
+
 
 PLATFORM ?= aarch64le
 BUILD_PROFILE ?= debug
@@ -20,6 +23,7 @@ LD = $(CXX)
 
 # User defined include/preprocessor flags and libraries
 INCLUDES += -I../common/include
+LIBS += -lhiddi
 
 # Compiler flags for build profiles
 CCFLAGS_release += -O2

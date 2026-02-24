@@ -3,7 +3,7 @@
 # =========================================================
 
 # 1. List every file in your project that has a main() function
-MAIN_SRCS = src/drive.cpp
+MAIN_SRCS = src/drive.cpp src/test_drive.cpp
 
 PLATFORM ?= aarch64le
 BUILD_PROFILE ?= debug
@@ -50,8 +50,13 @@ ALL_OBJS = $(addprefix $(OUTPUT_DIR)/,$(addsuffix .o, $(subst ../,shared_out/,$(
 # Rules section for default compilation and linking
 all: $(TARGETS)
 
-# 5. Static Pattern Rule for Linking multiple binaries
-$(TARGETS): $(OUTPUT_DIR)/%: $(OUTPUT_DIR)/src/%.o $(COMMON_OBJS)
+# 5. Linking rules
+# Drive server binary needs all server objects (DriveController, FourMotorI2CDriver)
+$(OUTPUT_DIR)/drive: $(OUTPUT_DIR)/src/drive.o $(COMMON_OBJS)
+	$(LD) -o $@ $(LDFLAGS_all) $(LDFLAGS) $^ $(LIBS_all) $(LIBS)
+
+# Test client binary is standalone (just IPC client, no server code)
+$(OUTPUT_DIR)/test_drive: $(OUTPUT_DIR)/src/test_drive.o
 	$(LD) -o $@ $(LDFLAGS_all) $(LDFLAGS) $^ $(LIBS_all) $(LIBS)
 
 # Custom rule for compiling the shared common files

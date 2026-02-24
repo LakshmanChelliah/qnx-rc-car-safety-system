@@ -296,11 +296,13 @@ void DriveController::processHardwarePulse() {
     
     // Check for timeout
     if (timeout_counter_ >= DRIVE_TIMEOUT_PULSES) {
-        // Watchdog timeout - stop motors
+        // Watchdog timeout
         if (target_speed_left_ != 0.0f || target_speed_right_ != 0.0f) {
             std::cout << "[DriveController] Watchdog timeout! Stopping motors." << std::endl;
             target_speed_left_ = 0.0f;
             target_speed_right_ = 0.0f;
+        } else if (timeout_counter_ == DRIVE_TIMEOUT_PULSES) {
+            std::cout << "[DriveController] Watchdog timeout (motors already stopped)." << std::endl;
         }
     }
     
