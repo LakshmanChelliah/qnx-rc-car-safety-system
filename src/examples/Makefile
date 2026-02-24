@@ -1,14 +1,17 @@
 # =========================================================
-# QNX PROJECT BUILD LOGIC
+# QNX PROJECT BUILD LOGIC (Multiple Binaries)
 # =========================================================
 
-ARTIFACT = drive_binary
+# 1. List every file in your project that has a main() function
+MAIN_SRCS = src/example_servo_control.cpp src/example_motor_control.cpp src/example_file_lock.cpp
 
 PLATFORM ?= aarch64le
 BUILD_PROFILE ?= debug
 CONFIG_NAME ?= $(PLATFORM)-$(BUILD_PROFILE)
 OUTPUT_DIR = build/$(CONFIG_NAME)
-TARGET = $(OUTPUT_DIR)/$(ARTIFACT)
+
+# 2. Automatically generate the target binary names (e.g., build/aarch64le-debug/example1)
+TARGETS = $(basename $(patsubst src/%, $(OUTPUT_DIR)/%, $(MAIN_SRCS)))
 
 # Compiler definitions
 CC = qcc -Vgcc_nto$(PLATFORM)
@@ -36,12 +39,20 @@ DEPS = -Wp,-MMD,$(@:%.o=%.d),-MT,$@
 # Macro to expand files recursively
 rwildcard = $(wildcard $(addprefix $1/*.,$2)) $(foreach d,$(wildcard $1/*),$(call rwildcard,$d,$2))
 
-# Source list (local AND common shared files)
-SRCS = $(call rwildcard, src, c cpp) $(call rwildcard, ../common/src, c cpp)
+# 3. Separate Shared/Common sources from Main sources
+ALL_SRCS = $(call rwildcard, src, c cpp) $(call rwildcard, ../common/src, c cpp)
+COMMON_SRCS = $(filter-out $(MAIN_SRCS), $(ALL_SRCS))
 
-# Object files list
-# VERY IMPORTANT: Replaces '../' with 'shared_out/' so they stay trapped inside the architecture output folder
-OBJS = $(addprefix $(OUTPUT_DIR)/,$(addsuffix .o, $(subst ../,shared_out/,$(basename $(SRCS)))))
+# 4. Generate Object lists
+COMMON_OBJS = $(addprefix $(OUTPUT_DIR)/,$(addsuffix .o, $(subst ../,shared_out/,$(basename $(COMMON_SRCS)))))
+ALL_OBJS = $(addprefix $(OUTPUT_DIR)/,$(addsuffix .o, $(subst ../,shared_out/,$(basename $(ALL_SRCS)))))
+
+# Rules section for default compilation and linking
+all: $(TARGETS)
+
+# 5. Static Pattern Rule for Linking multiple binaries
+$(TARGETS): $(OUTPUT_DIR)/%: $(OUTPUT_DIR)/src/%.o $(COMMON_OBJS)
+	$(LD) -o $@ $(LDFLAGS_all) $(LDFLAGS) $^ $(LIBS_all) $(LIBS)
 
 # Custom rule for compiling the shared common files
 $(OUTPUT_DIR)/shared_out/%.o: ../%.c
@@ -56,15 +67,8 @@ $(OUTPUT_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) -c $(DEPS) -o $@ $(INCLUDES) $(CCFLAGS_all) $(CCFLAGS) $<
 
-# Linking rule
-$(TARGET): $(OBJS)
-	$(LD) -o $(TARGET) $(LDFLAGS_all) $(LDFLAGS) $(OBJS) $(LIBS_all) $(LIBS)
-
-# Rules section for default compilation and linking
-all: $(TARGET)
-
 clean:
 	rm -fr $(OUTPUT_DIR)
 
 # Inclusion of dependencies (object files to source and includes)
--include $(OBJS:%.o=%.d)
+-include $(ALL_OBJS:%.o=%.d)
