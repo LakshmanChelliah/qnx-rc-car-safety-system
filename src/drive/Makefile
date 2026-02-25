@@ -10,8 +10,8 @@ BUILD_PROFILE ?= debug
 CONFIG_NAME ?= $(PLATFORM)-$(BUILD_PROFILE)
 OUTPUT_DIR = build/$(CONFIG_NAME)
 
-# 2. Automatically generate the target binary names (e.g., build/aarch64le-debug/example1)
-TARGETS = $(basename $(patsubst src/%, $(OUTPUT_DIR)/%, $(MAIN_SRCS)))
+# 2. Automatically generate the target binary names (e.g., build/aarch64le-debug/example1.aarch64le.bin)
+TARGETS = $(addsuffix .$(PLATFORM).bin, $(basename $(patsubst src/%, $(OUTPUT_DIR)/%, $(MAIN_SRCS))))
 
 # Compiler definitions
 CC = qcc -Vgcc_nto$(PLATFORM)
@@ -52,11 +52,11 @@ all: $(TARGETS)
 
 # 5. Linking rules
 # Drive server binary needs all server objects (DriveController, FourMotorI2CDriver)
-$(OUTPUT_DIR)/drive: $(OUTPUT_DIR)/src/drive.o $(COMMON_OBJS)
+$(OUTPUT_DIR)/drive.$(PLATFORM).bin: $(OUTPUT_DIR)/src/drive.o $(COMMON_OBJS)
 	$(LD) -o $@ $(LDFLAGS_all) $(LDFLAGS) $^ $(LIBS_all) $(LIBS)
 
 # Test client binary is standalone (just IPC client, no server code)
-$(OUTPUT_DIR)/test_drive: $(OUTPUT_DIR)/src/test_drive.o
+$(OUTPUT_DIR)/test_drive.$(PLATFORM).bin: $(OUTPUT_DIR)/src/test_drive.o
 	$(LD) -o $@ $(LDFLAGS_all) $(LDFLAGS) $^ $(LIBS_all) $(LIBS)
 
 # Custom rule for compiling the shared common files

@@ -13,8 +13,8 @@ BUILD_PROFILE ?= debug
 CONFIG_NAME ?= $(PLATFORM)-$(BUILD_PROFILE)
 OUTPUT_DIR = build/$(CONFIG_NAME)
 
-# 2. Automatically generate the target binary names (e.g., build/aarch64le-debug/example1)
-TARGETS = $(basename $(patsubst src/%, $(OUTPUT_DIR)/%, $(MAIN_SRCS)))
+# 2. Automatically generate the target binary names (e.g., build/aarch64le-debug/example1.aarch64le.bin)
+TARGETS = $(addsuffix .$(PLATFORM).bin, $(basename $(patsubst src/%, $(OUTPUT_DIR)/%, $(MAIN_SRCS))))
 
 # Compiler definitions
 CC = qcc -Vgcc_nto$(PLATFORM)
@@ -55,7 +55,7 @@ ALL_OBJS = $(addprefix $(OUTPUT_DIR)/,$(addsuffix .o, $(subst ../,shared_out/,$(
 all: $(TARGETS)
 
 # 5. Static Pattern Rule for Linking multiple binaries
-$(TARGETS): $(OUTPUT_DIR)/%: $(OUTPUT_DIR)/src/%.o $(COMMON_OBJS)
+$(TARGETS): $(OUTPUT_DIR)/%.$(PLATFORM).bin: $(OUTPUT_DIR)/src/%.o $(COMMON_OBJS)
 	$(LD) -o $@ $(LDFLAGS_all) $(LDFLAGS) $^ $(LIBS_all) $(LIBS)
 
 # Custom rule for compiling the shared common files

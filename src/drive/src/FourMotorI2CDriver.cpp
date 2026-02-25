@@ -139,7 +139,11 @@ void FourMotorI2CDriver::writeRegister(uint8_t reg, uint8_t value) {
     
     int result = devctl(i2c_fd_, DCMD_I2C_SEND, &msg, sizeof(msg), NULL);
     if (result != EOK) {
-        throw std::runtime_error("I2C write failed");
+        char error_msg[256];
+        snprintf(error_msg, sizeof(error_msg), 
+                 "I2C write failed: reg=0x%02X, value=0x%02X, result=%d (%s)",
+                 reg, value, result, strerror(result));
+        throw std::runtime_error(error_msg);
     }
 }
 
@@ -159,7 +163,11 @@ uint8_t FourMotorI2CDriver::readRegister(uint8_t reg) {
     
     int result = devctl(i2c_fd_, DCMD_I2C_SENDRECV, &msg, sizeof(msg), NULL);
     if (result != EOK) {
-        throw std::runtime_error("I2C read failed");
+        char error_msg[256];
+        snprintf(error_msg, sizeof(error_msg), 
+                 "I2C read failed: reg=0x%02X, result=%d (%s)",
+                 reg, result, strerror(result));
+        throw std::runtime_error(error_msg);
     }
     
     return msg.data[0];

@@ -291,8 +291,10 @@ void DriveController::handleEStop(const EmergencyStopCommandMsg& msg) {
 // ====================
 
 void DriveController::processHardwarePulse() {
-    // Increment timeout counter
-    timeout_counter_++;
+    // Increment timeout counter (capped to prevent overflow)
+    if (timeout_counter_ < DRIVE_TIMEOUT_PULSES + 1) {
+        timeout_counter_++;
+    }
     
     // Check for timeout
     if (timeout_counter_ >= DRIVE_TIMEOUT_PULSES) {
