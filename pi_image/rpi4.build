@@ -122,7 +122,7 @@
     ############################################################################################
     display_msg "Setting Static IP ..."
     # dhcpcd -bqq
-    ifconfig genet0 192.168.0.108 netmask 255.255.255.0 up
+    ifconfig genet0 192.168.7.2 netmask 255.255.255.0 up
     
     # Wait 2 seconds for the IP to latch onto the physical hardware
     sleep 2    
