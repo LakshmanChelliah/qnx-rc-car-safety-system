@@ -19,9 +19,8 @@ Unlike standard Linux distributions (.img files) that require specialized flashi
 
 ## 3. Boot the Pi
 1. Safely eject the MicroSD card and insert it into the Raspberry Pi 4.
-2. Connect an ethernet cable between the pi and your laptop. 
-3. Setup your laptop as a static ip on 192.168.0.XXX (but not 108). 
-4. Run `ssh qnxuser@192.168.0.108` and type the password `qnxuser`. 
+2. Connect wifi network called COMPE4900E_Group7 with password qnxuser123
+4. Run `ssh qnxuser@192.168.7.2` and type the password `qnxuser`. 
 5. You are now ssh'd in! Run `cd /` and you can see what files are there.
 
 ---
