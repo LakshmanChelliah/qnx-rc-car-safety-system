@@ -2,7 +2,7 @@
 PLATFORMS = x86_64 aarch64le
 
 # List your project directories here (ADD NEW PROJECTS HERE)
-SUBDIRS = drive
+SUBDIRS = drive examples
 
 .PHONY: all clean $(SUBDIRS)
 

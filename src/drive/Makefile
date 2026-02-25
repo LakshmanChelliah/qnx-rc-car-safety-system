@@ -1,37 +1,17 @@
 # =========================================================
-# 1. MULTI-ARCHITECTURE WRAPPER
-# =========================================================
-# Define the platforms we want to build every time
-PLATFORMS = x86_64 aarch64le
-
-# If CURRENT_PLATFORM is not set, we are in the "parent" make run.
-# We loop through PLATFORMS and call this Makefile again for each one.
-ifndef CURRENT_PLATFORM
-
-all:
-	@for p in $(PLATFORMS); do \
-		echo "=== Building Drive Node for $$p ==="; \
-		$(MAKE) --no-print-directory CURRENT_PLATFORM=$$p PLATFORM=$$p all; \
-	done
-
-clean:
-	@for p in $(PLATFORMS); do \
-		$(MAKE) --no-print-directory CURRENT_PLATFORM=$$p PLATFORM=$$p clean; \
-	done
-
-rebuild: clean all
-
-else
-# =========================================================
-# 2. QNX PROJECT BUILD LOGIC (The "Child" Run)
+# QNX PROJECT BUILD LOGIC (Multiple Binaries)
 # =========================================================
 
-ARTIFACT = drive_binary
-PLATFORM = $(CURRENT_PLATFORM)
+# 1. List every file in your project that has a main() function
+MAIN_SRCS = src/drive.cpp src/test_drive.cpp
+
+PLATFORM ?= aarch64le
 BUILD_PROFILE ?= debug
 CONFIG_NAME ?= $(PLATFORM)-$(BUILD_PROFILE)
 OUTPUT_DIR = build/$(CONFIG_NAME)
-TARGET = $(OUTPUT_DIR)/$(ARTIFACT)
+
+# 2. Automatically generate the target binary names (e.g., build/aarch64le-debug/example1.aarch64le.bin)
+TARGETS = $(addsuffix .$(PLATFORM).bin, $(basename $(patsubst src/%, $(OUTPUT_DIR)/%, $(MAIN_SRCS))))
 
 # Compiler definitions
 CC = qcc -Vgcc_nto$(PLATFORM)
@@ -59,12 +39,25 @@ DEPS = -Wp,-MMD,$(@:%.o=%.d),-MT,$@
 # Macro to expand files recursively
 rwildcard = $(wildcard $(addprefix $1/*.,$2)) $(foreach d,$(wildcard $1/*),$(call rwildcard,$d,$2))
 
-# Source list (local AND common shared files)
-SRCS = $(call rwildcard, src, c cpp) $(call rwildcard, ../common/src, c cpp)
+# 3. Separate Shared/Common sources from Main sources
+ALL_SRCS = $(call rwildcard, src, c cpp) $(call rwildcard, ../common/src, c cpp)
+COMMON_SRCS = $(filter-out $(MAIN_SRCS), $(ALL_SRCS))
 
-# Object files list
-# VERY IMPORTANT: Replaces '../' with 'shared_out/' so they stay trapped inside the architecture output folder
-OBJS = $(addprefix $(OUTPUT_DIR)/,$(addsuffix .o, $(subst ../,shared_out/,$(basename $(SRCS)))))
+# 4. Generate Object lists
+COMMON_OBJS = $(addprefix $(OUTPUT_DIR)/,$(addsuffix .o, $(subst ../,shared_out/,$(basename $(COMMON_SRCS)))))
+ALL_OBJS = $(addprefix $(OUTPUT_DIR)/,$(addsuffix .o, $(subst ../,shared_out/,$(basename $(ALL_SRCS)))))
+
+# Rules section for default compilation and linking
+all: $(TARGETS)
+
+# 5. Linking rules
+# Drive server binary needs all server objects (DriveController, FourMotorI2CDriver)
+$(OUTPUT_DIR)/drive.$(PLATFORM).bin: $(OUTPUT_DIR)/src/drive.o $(COMMON_OBJS)
+	$(LD) -o $@ $(LDFLAGS_all) $(LDFLAGS) $^ $(LIBS_all) $(LIBS)
+
+# Test client binary is standalone (just IPC client, no server code)
+$(OUTPUT_DIR)/test_drive.$(PLATFORM).bin: $(OUTPUT_DIR)/src/test_drive.o
+	$(LD) -o $@ $(LDFLAGS_all) $(LDFLAGS) $^ $(LIBS_all) $(LIBS)
 
 # Custom rule for compiling the shared common files
 $(OUTPUT_DIR)/shared_out/%.o: ../%.c
@@ -79,17 +72,8 @@ $(OUTPUT_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) -c $(DEPS) -o $@ $(INCLUDES) $(CCFLAGS_all) $(CCFLAGS) $<
 
-# Linking rule
-$(TARGET): $(OBJS)
-	$(LD) -o $(TARGET) $(LDFLAGS_all) $(LDFLAGS) $(OBJS) $(LIBS_all) $(LIBS)
-
-# Rules section for default compilation and linking
-all: $(TARGET)
-
 clean:
 	rm -fr $(OUTPUT_DIR)
 
 # Inclusion of dependencies (object files to source and includes)
--include $(OBJS:%.o=%.d)
-
-endif
+-include $(ALL_OBJS:%.o=%.d)

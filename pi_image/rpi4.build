@@ -95,6 +95,12 @@
     #######################################################################
     sh /proc/boot/usb_start.sh
 
+    # Give the USB stack a moment to initialize
+    sleep 2
+
+    display_msg "Starting HID manager (/dev/hid*)..."
+    io-hid -d usb &
+
 
     ############################################################################################
     ## Storage service
@@ -116,7 +122,7 @@
     ############################################################################################
     display_msg "Setting Static IP ..."
     # dhcpcd -bqq
-    ifconfig genet0 192.168.0.108 netmask 255.255.255.0 up
+    ifconfig genet0 192.168.7.2 netmask 255.255.255.0 up
     
     # Wait 2 seconds for the IP to latch onto the physical hardware
     sleep 2    
@@ -358,6 +364,7 @@ fi
 ################################################################################################
 /lib/libhiddi.so=libhiddi.so
 /lib/libusbdi.so=libusbdi.so
+/lib/dll/devh-usb.so=devh-usb.so
 
 ################################################################################################
 ## USB host driver and support
@@ -365,6 +372,8 @@ fi
 /sbin/io-usb-otg=io-usb-otg
 /sbin/usb=usb
 /sbin/devb-umass=devb-umass
+/sbin/io-hid=io-hid
+/usr/bin/hidview=hidview
 
 ################################################################################################
 ## USB device shared libraries
