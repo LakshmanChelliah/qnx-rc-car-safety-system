@@ -24,7 +24,7 @@
             <qconnport value="8000"/>
             <qconnostype value="nto"/>
             <qconnguid value="d74ffdfd-258e-4032-9bd9-4c20e46c51ad"/>
-            <qconnhostname value="192.168.0.108"/>
+            <qconnhostname value="192.168.7.2"/>
             <targettmpdir value="/tmp"/>
         </item>
     </data>
