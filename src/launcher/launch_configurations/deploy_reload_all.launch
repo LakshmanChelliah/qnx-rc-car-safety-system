@@ -52,15 +52,11 @@
     <stringAttribute key="com.qnx.tools.ide.qde.core.DIR_UPLOAD" value="/fs/apps"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.DO_NOT_UPLOAD_LIBS" value="false"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.DO_UPLOAD" value="true"/>
-    <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_LOCAL_NAME.0" value="${workspace_loc:qnx-rc-car-safety-system}/drive/build/aarch64le-debug/drive.aarch64le.bin"/>
-    <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_LOCAL_NAME.1" value="${workspace_loc:qnx-rc-car-safety-system}/examples/build/aarch64le-debug/example_file_lock.aarch64le.bin"/>
+    <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_LOCAL_NAME.0" value="${workspace_loc:qnx-rc-car-safety-system}/examples/build/aarch64le-debug/example_file_lock.aarch64le.bin"/>
     <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_REMOTE_PATH.0" value="/fs/apps"/>
-    <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_REMOTE_PATH.1" value="/fs/apps"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_STRIP.0" value="true"/>
-    <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_STRIP.1" value="true"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_UPLOAD.0" value="true"/>
-    <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_UPLOAD.1" value="true"/>
-    <intAttribute key="com.qnx.tools.ide.qde.core.NUM_UPLOAD_LIBS" value="2"/>
+    <intAttribute key="com.qnx.tools.ide.qde.core.NUM_UPLOAD_LIBS" value="1"/>
     <listAttribute key="com.qnx.tools.ide.qde.core.SOLIB_PATH"/>
     <listAttribute key="com.qnx.tools.ide.qde.core.SOLIB_PATH_SAVE"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.STRIP_BEFORE_UPLOAD" value="true"/>
