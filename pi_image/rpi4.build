@@ -81,14 +81,17 @@
 
     #######################################################################
     ## SD memory card / eMMC driver
-    ## Note: "bmstr_base" option is required for busmaster memory
-    ## address translation
     #######################################################################
     display_msg "Starting SDMMC driver (/dev/sd0)"
     devb-sdmmc-bcm2711 mem name=below1G sdio addr=0xfe340000,irq=158 disk name=sd
-    waitfor /dev/sd0
+    
+    waitfor /dev/sd0 10
+    mount -e /dev/sd0
+    waitfor /dev/sd0t11 5
 
-
+    # Mount FAT32 and hand off immediately
+    display_msg "Mounting FAT32 boot partition..."
+    mount -t dos -o exe=all /dev/sd0t11 /fs/boot
 
     #######################################################################
     ## USB OTG Host Controller driver
@@ -107,6 +110,9 @@
     ############################################################################################
     /proc/boot/.storage-server.sh
 
+    display_msg "Starting pi car apps launcher.."
+    sleep 2
+    sh /fs/boot/reload_pi_car_apps.sh --boot-mode --logs &
 
     ############################################################################################
     ## Network driver
@@ -588,6 +594,11 @@ qnxuser:x:1000
 [uid=0 gid=0 type=dir dperms=0755] /var/chroot
 [uid=0 gid=0 type=dir dperms=0755] /var/chroot/sshd
 
+# Pi car added directories
+[uid=0 gid=0 type=dir dperms=0775] /fs
+[uid=0 gid=0 type=dir dperms=0775] /fs/boot
+[uid=1000 gid=1000 type=dir dperms=0775] /fs/apps
+
 [uid=0 gid=0 perms=0644] /etc/pam.d/login=${QNX_TARGET}/etc/pam.d/login
 [uid=0 gid=0 perms=0644] /etc/pam.d/passwd=${QNX_TARGET}/etc/pam.d/passwd
 [uid=0 gid=0 perms=0644] /etc/pam.d/su=${QNX_TARGET}/etc/pam.d/su
@@ -641,6 +652,9 @@ ldqnx-64.so.2=ldqnx-64.so.2
 /bin/sync=sync
 /bin/umount=umount
 /bin/waitfor=waitfor
+
+/sbin/fdisk=fdisk
+/sbin/mkqnx6fs=mkqnx6fs
 
 /sbin/mqueue=mqueue
 /sbin/pipe=pipe
