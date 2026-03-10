@@ -56,7 +56,7 @@
     <listAttribute key="com.qnx.tools.ide.qde.core.SOLIB_PATH"/>
     <listAttribute key="com.qnx.tools.ide.qde.core.SOLIB_PATH_SAVE"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.STRIP_BEFORE_UPLOAD" value="true"/>
-    <stringAttribute key="com.qnx.tools.ide.qde.core.TARGET_ATTR" value="pi_target"/>
+    <stringAttribute key="com.qnx.tools.ide.qde.core.TARGET_ATTR" value="vm1"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.TOOL.all.com.qnx.tools.ide.apsinfo.ui.launch.ApsLaunch" value="false"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.TOOL.all.com.qnx.tools.ide.qde.prio" value="false"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.TOOL.debug.com.qnx.tools.ide.SystemProfiler.neutrino.ui.launch.logging" value="false"/>

@@ -14,6 +14,8 @@
 #include <csignal>
 #include <memory>
 
+int run_imu_test();
+
 /**
  * Global shutdown flag for signal handler.
  * Must be volatile sig_atomic_t for async-signal-safety.
@@ -67,7 +69,7 @@ int main(int argc, char* argv[]) {
         return EXIT_SUCCESS;
     }
     
-    bool success = g_controller->start();
+    bool success = (run_imu_test() == 0);
     
     if (g_shutdown_requested) {
         std::cout << "\n[Main] Caught signal - initiating graceful shutdown..." << std::endl;
