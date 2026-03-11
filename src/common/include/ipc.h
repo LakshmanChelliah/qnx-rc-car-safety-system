@@ -21,7 +21,7 @@
 // ====================
 typedef enum {
     SOURCE_NONE = 0,
-    SOURCE_WIFI_JOYSTICK = 1,
+    SOURCE_USB_JOYSTICK = 1,
     SOURCE_WEBAPP = 2,
     SOURCE_CRUISE_CONTROL = 3
 } ControlSource;
