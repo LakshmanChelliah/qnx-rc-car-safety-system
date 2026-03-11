@@ -8,6 +8,7 @@
 // ====================
 #define IPC_DRIVE_CHANNEL "drive_controller_cmd"
 #define IPC_HW_LOCK_NAME "pca9685_hw_lock"
+#define IPC_OLED_CHANNEL "OLED_cmd"
 
 // ====================
 // Message Type Codes

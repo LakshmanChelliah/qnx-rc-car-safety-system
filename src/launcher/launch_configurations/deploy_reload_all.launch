@@ -52,12 +52,15 @@
     <stringAttribute key="com.qnx.tools.ide.qde.core.DIR_UPLOAD" value="/fs/apps"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.DO_NOT_UPLOAD_LIBS" value="false"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.DO_UPLOAD" value="true"/>
-    <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_LOCAL_NAME.0" value="${workspace_loc:qnx-rc-car-safety-system}/examples/build/aarch64le-debug/example_file_lock.aarch64le.bin"/>
-    <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_LOCAL_NAME.0" value="${workspace_loc:qnx-rc-car-safety-system}/joystick/build/aarch64le-debug/joystick.aarch64le.bin"/>   
+    <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_LOCAL_NAME.0" value="${workspace_loc:qnx-rc-car-safety-system}/joystick/build/aarch64le-debug/joystick.aarch64le.bin"/>
+    <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_LOCAL_NAME.1" value="${workspace_loc:qnx-rc-car-safety-system}/examples/build/aarch64le-debug/example_file_lock.aarch64le.bin"/>
     <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_REMOTE_PATH.0" value="/fs/apps"/>
+    <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_REMOTE_PATH.1" value="/fs/apps"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_STRIP.0" value="true"/>
+    <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_STRIP.1" value="true"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_UPLOAD.0" value="true"/>
-    <intAttribute key="com.qnx.tools.ide.qde.core.NUM_UPLOAD_LIBS" value="1"/>
+    <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_UPLOAD.1" value="true"/>
+    <intAttribute key="com.qnx.tools.ide.qde.core.NUM_UPLOAD_LIBS" value="2"/>
     <listAttribute key="com.qnx.tools.ide.qde.core.SOLIB_PATH"/>
     <listAttribute key="com.qnx.tools.ide.qde.core.SOLIB_PATH_SAVE"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.STRIP_BEFORE_UPLOAD" value="true"/>
@@ -91,6 +94,7 @@
     <booleanAttribute key="org.eclipse.cdt.launch.DEBUGGER_STOP_AT_MAIN" value="true"/>
     <stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_STOP_AT_MAIN_SYMBOL" value="main"/>
     <stringAttribute key="org.eclipse.cdt.launch.PLATFFORM" value="qnx"/>
+    <stringAttribute key="org.eclipse.cdt.launch.PROGRAM_ARGUMENTS" value="--drive"/>
     <stringAttribute key="org.eclipse.cdt.launch.PROGRAM_NAME" value="launcher/build/aarch64le-debug/reload_pi_car_apps.aarch64le.bin"/>
     <stringAttribute key="org.eclipse.cdt.launch.PROJECT_ATTR" value="qnx-rc-car-safety-system"/>
     <booleanAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_AUTO_ATTR" value="true"/>

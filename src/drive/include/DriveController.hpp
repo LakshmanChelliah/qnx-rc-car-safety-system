@@ -47,6 +47,17 @@ public:
      */
     void stop();
 
+    /**
+     * Connect to the OLED Controller IPC channel
+     * @return true on success, false on failure
+     */
+    bool connectIPC();
+
+    /**
+     * Disconnect from the OLED Controller IPC channel
+     */
+    void disconnectIPC();
+
 private:
     // Hardware driver (owned)
     std::unique_ptr<FourMotorI2CDriver> motor_driver_;
@@ -56,6 +67,7 @@ private:
     int timer_id_;
     struct sigevent timer_event_;
     timer_t timer_;
+    int m_oledCoid;
     
     // State Machine Variables
     ControlSource current_active_source_;

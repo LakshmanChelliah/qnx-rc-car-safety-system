@@ -18,6 +18,7 @@ DriveController::DriveController()
       channel_(nullptr),
       timer_id_(-1),
       timer_(-1),
+      m_oledCoid(-1),
       current_active_source_(SOURCE_NONE),
       is_e_stopped_(false),
       timeout_counter_(0),
@@ -81,6 +82,8 @@ bool DriveController::start() {
         channel_ = nullptr;
         return false;
     }
+
+    connectIPC();
     
     SIGEV_PULSE_INIT(&timer_event_, timer_id_, PRIORITY_DRIVE_SERVER, TIMER_PULSE_CODE, 0);
     
@@ -229,6 +232,39 @@ void DriveController::stop() {
     running_ = false;
 }
 
+bool DriveController::connectIPC() {
+    std::cout << "[DriveController] Waiting for OLED IPC ('" << IPC_OLED_CHANNEL << "')..." << std::endl;
+
+    struct timespec start, now;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+
+    // Retry for up to 10 seconds so drive startup is not blocked if OLED is unavailable
+    while (m_oledCoid == -1 && !g_shutdown_requested) {
+        m_oledCoid = name_open(IPC_OLED_CHANNEL, 0);
+        if (m_oledCoid == -1) {
+            clock_gettime(CLOCK_MONOTONIC, &now);
+            double elapsed = (now.tv_sec - start.tv_sec) + (now.tv_nsec - start.tv_nsec) / 1e9;
+            if (elapsed >= 10.0) {
+                std::cerr << "[DriveController] OLED IPC not found after 10s, continuing without display." << std::endl;
+                return false;
+            }
+            usleep(500000); // Wait half a second before retrying
+        }
+    }
+
+    if (g_shutdown_requested) return false;
+
+    std::cout << "[DriveController] Connected to OLED Controller IPC." << std::endl;
+    return true;
+}
+
+void DriveController::disconnectIPC() {
+    if (m_oledCoid != -1) {
+        name_close(m_oledCoid);
+        m_oledCoid = -1;
+    }
+}
+
 // ====================
 // Message Handlers
 // ====================
@@ -283,6 +319,21 @@ void DriveController::handleEStop(const EmergencyStopCommandMsg& msg) {
         std::cout << "[DriveController] Emergency stop CLEARED." << std::endl;
         is_e_stopped_ = false;
         resetTimeout();
+    }
+
+    if (m_oledCoid != -1) {
+        // Send the exact same message struct over to the display.
+        // MsgSend blocks until the display server calls MsgReply (which we set up to be instant).
+        int result = MsgSend(m_oledCoid, &msg, sizeof(msg), NULL, 0);
+        
+        if (result == -1) {
+            std::cerr << "[DriveController] WARNING: Failed to send E-Stop to Display: " 
+                      << strerror(errno) << std::endl;
+        }
+    } else {
+        // This is normal if the display module isn't currently running
+        std::cerr << "[DriveController] WARNING: OLED module not found (" 
+                  << IPC_OLED_CHANNEL << "). E-Stop state not displayed." << std::endl;
     }
 }
 

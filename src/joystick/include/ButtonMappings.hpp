@@ -43,7 +43,7 @@ public:
     void publishTick();
 
 private:
-    int m_serverCoid;
+    int m_driveCoid;
     
     // Thread safety variables
     std::mutex m_stateMutex;

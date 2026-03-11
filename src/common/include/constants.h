@@ -9,6 +9,11 @@
 #define I2C_DEVICE_PATH "/dev/i2c1"
 
 // ====================
+// OLED Display Constants
+// ====================
+#define SSD1306_I2C_ADDR 0x3C
+
+// ====================
 // PCA9685 I2C Address and Registers
 // ====================
 #define PCA9685_ADDR 0x5F

@@ -12,7 +12,7 @@
 
 extern volatile sig_atomic_t g_shutdown_requested;
 
-ButtonMappings::ButtonMappings() : m_serverCoid(-1) {}
+ButtonMappings::ButtonMappings() : m_driveCoid(-1) {}
 
 ButtonMappings::~ButtonMappings() {
     disconnectIPC();
@@ -22,9 +22,9 @@ bool ButtonMappings::connectIPC() {
     std::cout << "[Joystick] Waiting for Drive Controller IPC ('" << IPC_DRIVE_CHANNEL << "')..." << std::endl;
     
     // Retry loop so joystick gracefully waits for drive to launch
-    while (m_serverCoid == -1 && !g_shutdown_requested) {
-        m_serverCoid = name_open(IPC_DRIVE_CHANNEL, 0);
-        if (m_serverCoid == -1) {
+    while (m_driveCoid == -1 && !g_shutdown_requested) {
+        m_driveCoid = name_open(IPC_DRIVE_CHANNEL, 0);
+        if (m_driveCoid == -1) {
             usleep(500000); // Wait half a second before retrying
         }
     }
@@ -36,9 +36,9 @@ bool ButtonMappings::connectIPC() {
 }
 
 void ButtonMappings::disconnectIPC() {
-    if (m_serverCoid != -1) {
-        name_close(m_serverCoid);
-        m_serverCoid = -1;
+    if (m_driveCoid != -1) {
+        name_close(m_driveCoid);
+        m_driveCoid = -1;
     }
 }
 
@@ -50,7 +50,7 @@ void ButtonMappings::updateState(const ControllerState& newState) {
 
 // Called by main thread timer loop
 void ButtonMappings::publishTick() {
-    if (m_serverCoid == -1) return;
+    if (m_driveCoid == -1) return;
 
     ControllerState currentState;
     {
@@ -109,14 +109,14 @@ void ButtonMappings::sendDriveControlCommand(uint16_t source) {
     DriveControlCommandMsg msg;
     msg.msg_type = MSG_TYPE_DRIVE_CONTROL;
     msg.new_source = source;
-    MsgSend(m_serverCoid, &msg, sizeof(msg), NULL, 0);
+    MsgSend(m_driveCoid, &msg, sizeof(msg), NULL, 0);
 }
 
 void ButtonMappings::sendEmergencyStopCommand(uint16_t engage) {
     EmergencyStopCommandMsg msg;
     msg.msg_type = MSG_TYPE_EMERGENCY_STOP;
     msg.engage = engage;
-    MsgSend(m_serverCoid, &msg, sizeof(msg), NULL, 0);
+    MsgSend(m_driveCoid, &msg, sizeof(msg), NULL, 0);
 }
 
 void ButtonMappings::sendDriveSpeedCommand(float leftSpeed, float rightSpeed) {
@@ -125,5 +125,5 @@ void ButtonMappings::sendDriveSpeedCommand(float leftSpeed, float rightSpeed) {
     msg.source = SOURCE_USB_JOYSTICK;
     msg.left_speed = leftSpeed;
     msg.right_speed = rightSpeed;
-    MsgSend(m_serverCoid, &msg, sizeof(msg), NULL, 0);
+    MsgSend(m_driveCoid, &msg, sizeof(msg), NULL, 0);
 }

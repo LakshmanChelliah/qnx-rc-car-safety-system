@@ -6,7 +6,8 @@
 
 const std::vector<std::string> MANAGED_APPS = {
     "example_file_lock.aarch64le.bin", 
-	"joystick.aarch64le.bin"
+	"joystick.aarch64le.bin",
+    "oled.aarch64le.bin",
 };
 
 const std::string DRIVE_APP = "drive.aarch64le.bin";
