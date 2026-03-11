@@ -3,13 +3,16 @@
 Add the executable bin name to common/include/executables.hpp
 
 ### Step 2:
-- Modify launcher/launch_configurations/deploy_reload_all.launch in a regular text editor or vscode
-- Duplicate the line that looks like this below:
-```xml
-<stringAttribute key="com.qnx.tools.ide.qde.core.LIB_LOCAL_NAME.0" value="${workspace_loc:qnx-rc-car-safety-system}/joystick/build/aarch64le-debug/joystick.aarch64le.bin"/>   
-```
-- Change the `joystick/build/aarch64le-debug/joystick.aarch64le.bin` to your new executable
-- Update the `LIB_LOCAL_NAME.0` to a number above, like `LIB_LOCAL_NAME.1` or whatever the latest number is
+- Need to also make the launch configuration copy the executable over to the pi
+- Click the settings icon for the deploy_reload_all launch configuration
+- Go to upload tab
+- Click "Add..."
+- Add your executable
+- Click its Remote Path section (three dots button)
+- Set pi_target (do this first)
+- Change path to /fs/apps
+- Click OK
+- Click another OK
 
 ### Deploy and reload:
 Run the deploy_reload_all launch configuration on pi_target and it will copy over and run your new executable!
