@@ -108,10 +108,10 @@ void FourMotorI2CDriver::setSpeeds(float left_speed, float right_speed) {
     if (right_speed > MOTOR_SPEED_MAX) right_speed = MOTOR_SPEED_MAX;
     if (right_speed < MOTOR_SPEED_MIN) right_speed = MOTOR_SPEED_MIN;
     
-    setMotorSpeed(1, right_speed);
-    setMotorSpeed(2, left_speed);
-    setMotorSpeed(3, right_speed);
-    setMotorSpeed(4, left_speed);
+    setMotorSpeed(1, -left_speed); // front left
+    setMotorSpeed(2, -left_speed); // back left
+    setMotorSpeed(3, -right_speed); // back right
+    setMotorSpeed(4, -right_speed); // front right
 }
 
 void FourMotorI2CDriver::stopAll() {

@@ -97,7 +97,7 @@ The drive controller listens on the QNX global channel name `drive_controller_cm
 ```c
 typedef struct {
     uint16_t msg_type;          // MSG_TYPE_DRIVE_SPEED (0x01)
-    uint16_t source;            // ControlSource (SOURCE_WIFI_JOYSTICK, etc.)
+    uint16_t source;            // ControlSource (SOURCE_USB_JOYSTICK, etc.)
     float left_speed;           // -1.0 to 1.0
     float right_speed;          // -1.0 to 1.0
 } DriveSpeedCommandMsg;
@@ -278,13 +278,13 @@ int main() {
     // Switch to joystick control
     DriveControlCommandMsg ctrl_msg;
     ctrl_msg.msg_type = MSG_TYPE_DRIVE_CONTROL;
-    ctrl_msg.new_source = SOURCE_WIFI_JOYSTICK;
+    ctrl_msg.new_source = SOURCE_USB_JOYSTICK;
     MsgSend(server, &ctrl_msg, sizeof(ctrl_msg), NULL, 0);
     
     // Send forward command at 50% speed
     DriveSpeedCommandMsg speed_msg;
     speed_msg.msg_type = MSG_TYPE_DRIVE_SPEED;
-    speed_msg.source = SOURCE_WIFI_JOYSTICK;
+    speed_msg.source = SOURCE_USB_JOYSTICK;
     speed_msg.left_speed = 0.5f;
     speed_msg.right_speed = 0.5f;
     MsgSend(server, &speed_msg, sizeof(speed_msg), NULL, 0);

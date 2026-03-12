@@ -124,7 +124,7 @@ Defines the message-passing protocol for inter-process communication using QNX I
 ```c
 typedef enum {
     SOURCE_NONE = 0,
-    SOURCE_WIFI_JOYSTICK = 1,
+    SOURCE_USB_JOYSTICK = 1,
     SOURCE_WEBAPP = 2,
     SOURCE_CRUISE_CONTROL = 3
 } ControlSource;
@@ -159,7 +159,7 @@ typedef struct __attribute__((packed)) {
 ```c
 DriveSpeedCommandMsg msg;
 msg.msg_type = MSG_TYPE_DRIVE_SPEED;
-msg.source = SOURCE_WIFI_JOYSTICK;
+msg.source = SOURCE_USB_JOYSTICK;
 msg.left_speed = 0.5f;   // 50% forward
 msg.right_speed = 0.5f;  // 50% forward
 MsgSend(server, &msg, sizeof(msg), NULL, 0);

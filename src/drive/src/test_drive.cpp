@@ -20,11 +20,11 @@ int main() {
     
     std::cout << "Connected successfully!" << std::endl;
     
-    // Step 1: Set active control source to SOURCE_WIFI_JOYSTICK
-    std::cout << "\n[1/4] Setting active control source to SOURCE_WIFI_JOYSTICK..." << std::endl;
+    // Step 1: Set active control source to SOURCE_USB_JOYSTICK
+    std::cout << "\n[1/4] Setting active control source to SOURCE_USB_JOYSTICK..." << std::endl;
     DriveControlCommandMsg control_msg;
     control_msg.msg_type = MSG_TYPE_DRIVE_CONTROL;
-    control_msg.new_source = SOURCE_WIFI_JOYSTICK;
+    control_msg.new_source = SOURCE_USB_JOYSTICK;
     
     int result = MsgSend(server_coid, &control_msg, sizeof(control_msg), NULL, 0);
     if (result == -1) {
@@ -37,7 +37,7 @@ int main() {
     // Step 2: Run forward/reverse test 3 times
     DriveSpeedCommandMsg speed_msg;
     speed_msg.msg_type = MSG_TYPE_DRIVE_SPEED;
-    speed_msg.source = SOURCE_WIFI_JOYSTICK;
+    speed_msg.source = SOURCE_USB_JOYSTICK;
     
     for (int i = 1; i <= 3; i++) {
         std::cout << "\n[Cycle " << i << "/3]" << std::endl;

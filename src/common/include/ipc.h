@@ -8,6 +8,7 @@
 // ====================
 #define IPC_DRIVE_CHANNEL "drive_controller_cmd"
 #define IPC_HW_LOCK_NAME "pca9685_hw_lock"
+#define IPC_OLED_CHANNEL "OLED_cmd"
 
 // ====================
 // Message Type Codes
@@ -21,7 +22,7 @@
 // ====================
 typedef enum {
     SOURCE_NONE = 0,
-    SOURCE_WIFI_JOYSTICK = 1,
+    SOURCE_USB_JOYSTICK = 1,
     SOURCE_WEBAPP = 2,
     SOURCE_CRUISE_CONTROL = 3
 } ControlSource;

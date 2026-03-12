@@ -2,7 +2,7 @@
 PLATFORMS = x86_64 aarch64le
 
 # List your project directories here (ADD NEW PROJECTS HERE)
-SUBDIRS = drive examples launcher
+SUBDIRS = drive examples launcher joystick oled
 
 .PHONY: all clean $(SUBDIRS)
 
