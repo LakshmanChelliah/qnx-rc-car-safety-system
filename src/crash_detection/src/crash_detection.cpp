@@ -14,7 +14,7 @@
 
 // --- Timing ---
 #define SAMPLE_PERIOD_US 10000   // 10 ms sampling
-#define SENSOR_RESPONSE_US 5000  // try 8000 if reads become unstable
+#define SENSOR_RESPONSE_US 5000
 
 // --- Crash detection tuning ---
 #define VTHRD 10.0
@@ -184,7 +184,6 @@ static bool bno_read_block(int fd, uint8_t reg, uint8_t len, uint8_t *data) {
 }
 
 static const char* classify_impact_from(double ax, double ay) {
-    // Based on your testing:
     // forward movement  -> negative Y
     // backward movement -> positive Y
     // bonk left  -> positive X
