@@ -28,6 +28,7 @@ CCFLAGS_coverage += -g -O0 -ftest-coverage -fprofile-arcs
 LDFLAGS_coverage += -ftest-coverage -fprofile-arcs
 CCFLAGS_profile += -g -O0 -finstrument-functions
 LIBS_profile += -lprofilingS
+LIBS += -lslog2
 
 # Generic compiler flags (which include build type flags)
 CCFLAGS_all += -Wall -fmessage-length=0
