@@ -11,6 +11,8 @@
 #include <stdexcept>
 #include <cstring>
 #include <errno.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
 
 extern volatile sig_atomic_t g_shutdown_requested;
 
@@ -55,8 +57,18 @@ static const uint8_t font5x8[96][5] = {
 };
 
 OledDisplay::OledDisplay() 
-    : i2c_fd_(-1), channel_(nullptr), timer_id_(-1), timer_(-1),
-      running_(false), is_e_stopped_(true) {
+    : i2c_fd_(-1),
+      channel_(nullptr),
+      timer_id_(-1),
+      timer_(-1),
+      running_(false),
+      is_e_stopped_(true),
+      ultrasonic_shm_fd_(-1),
+      ultrasonic_state_(nullptr),
+      ultrasonic_mutex_(nullptr),
+      ultrasonic_available_(false),
+      distance_cm_(0),
+      distance_valid_(false) {
     
     memset(buffer_, 0, sizeof(buffer_));
 }
@@ -68,6 +80,17 @@ OledDisplay::~OledDisplay() {
     if (timer_id_ != -1) ConnectDetach(timer_id_);
     if (channel_ != nullptr) name_detach(channel_, 0);
     if (i2c_fd_ >= 0) close(i2c_fd_);
+
+    if (ultrasonic_state_ != nullptr) {
+        size_t map_size = sizeof(UltrasonicSharedState) + sizeof(pthread_mutex_t);
+        munmap(ultrasonic_state_, map_size);
+        ultrasonic_state_ = nullptr;
+        ultrasonic_mutex_ = nullptr;
+    }
+    if (ultrasonic_shm_fd_ != -1) {
+        close(ultrasonic_shm_fd_);
+        ultrasonic_shm_fd_ = -1;
+    }
 }
 
 bool OledDisplay::initI2C() {
@@ -213,17 +236,19 @@ void OledDisplay::renderUI() {
     drawStringWithWrap("Group 7 QNX Car", 0, 0, 1);
     
     // --- E-STOP STATUS ---
-    // size = 2 (16 pixels high, max ~10 chars per line).
-    // Start at y=24 to leave a small gap below the title.
+    // Keep text compact to leave room for distance line.
     if (is_e_stopped_) {
-        // "E-STOP: ON" is exactly 10 characters, fitting perfectly on one line.
-        drawStringWithWrap("E-STOP: ON", 0, 24, 2);
-        // Next line down (24 + 16px height + padding = 44)
-        drawStringWithWrap("STOPPED", 0, 44, 2); 
+        drawStringWithWrap("E-STOP: ON", 0, 20, 1);
     } else {
-        drawStringWithWrap("E-STOP:OFF", 0, 24, 2);
-        drawStringWithWrap("RUNNING", 0, 44, 2);
+        drawStringWithWrap("E-STOP: OFF", 0, 20, 1);
     }
+
+    std::string distance_text = "Distance : --- cm";
+    if (distance_valid_) {
+        distance_text = "Distance : " + std::to_string(distance_cm_) + " cm";
+    }
+    // Keep distance line small (same font as title) and place it under title.
+    drawStringWithWrap(distance_text, 0, 10, 1);
     
     updateDisplay();
 }
@@ -246,6 +271,26 @@ bool OledDisplay::start() {
     timer_spec.it_value.tv_sec = 1;
     timer_spec.it_interval.tv_sec = 1;
     timer_settime(timer_, 0, &timer_spec, NULL);
+
+    ultrasonic_shm_fd_ = shm_open(ULTRASONIC_SHM_NAME, O_RDWR, 0);
+    if (ultrasonic_shm_fd_ == -1) {
+        std::cerr << "[OledDisplay] Ultrasonic shared memory unavailable: " << strerror(errno) << std::endl;
+        ultrasonic_available_ = false;
+    } else {
+        size_t map_size = sizeof(UltrasonicSharedState) + sizeof(pthread_mutex_t);
+        void* ptr = mmap(nullptr, map_size, PROT_READ | PROT_WRITE, MAP_SHARED, ultrasonic_shm_fd_, 0);
+        if (ptr == MAP_FAILED) {
+            std::cerr << "[OledDisplay] Ultrasonic mmap failed: " << strerror(errno) << std::endl;
+            close(ultrasonic_shm_fd_);
+            ultrasonic_shm_fd_ = -1;
+            ultrasonic_available_ = false;
+        } else {
+            ultrasonic_state_ = reinterpret_cast<UltrasonicSharedState*>(ptr);
+            ultrasonic_mutex_ = reinterpret_cast<pthread_mutex_t*>(
+                reinterpret_cast<char*>(ptr) + sizeof(UltrasonicSharedState));
+            ultrasonic_available_ = true;
+        }
+    }
 
     running_ = true;
     renderUI(); // Initial draw
@@ -301,9 +346,21 @@ void OledDisplay::stop() {
 }
 
 void OledDisplay::processTimerPulse() {
-    // 1.0s timer pulse. 
-    // You can add CPU temperature polling here later.
-    // renderUI(); // Redraw if polling data changed
+    if (ultrasonic_available_ && ultrasonic_state_ && ultrasonic_mutex_) {
+        if (pthread_mutex_lock(ultrasonic_mutex_) == 0) {
+            distance_valid_ = (ultrasonic_state_->valid != 0);
+            if (distance_valid_) {
+                distance_cm_ = ultrasonic_state_->last_distance_cm;
+            }
+            pthread_mutex_unlock(ultrasonic_mutex_);
+        } else {
+            distance_valid_ = false;
+        }
+    } else {
+        distance_valid_ = false;
+    }
+
+    renderUI();
 }
 
 void OledDisplay::handleEStop(bool engaged) {
