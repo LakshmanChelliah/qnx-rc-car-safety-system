@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <hw/inout.h>
 #include <iostream>
+#include <sys/dispatch.h>
 #include <sys/mman.h>
 #include <sys/neutrino.h>
 #include <sys/stat.h>
@@ -30,6 +31,16 @@ void configureGpioMode(uintptr_t gpio_base, int pin, bool output) {
     }
     out32(gpio_base + reg, value);
 }
+
+size_t alignedMutexOffset() {
+    const size_t a = alignof(pthread_mutex_t);
+    const size_t n = sizeof(UltrasonicSharedState);
+    return (n + (a - 1)) & ~(a - 1);
+}
+
+size_t sharedMapSize() {
+    return alignedMutexOffset() + sizeof(pthread_mutex_t);
+}
 } // namespace
 
 UltrasonicNode::UltrasonicNode()
@@ -37,11 +48,17 @@ UltrasonicNode::UltrasonicNode()
       shared_state_(nullptr),
       shared_mutex_(nullptr),
       gpio_base_(MAP_DEVICE_FAILED),
+      drive_coid_(-1),
+      estop_engaged_(false),
       running_(false) {}
 
 UltrasonicNode::~UltrasonicNode() {
     stop();
     cleanupSharedState();
+    if (drive_coid_ != -1) {
+        name_close(drive_coid_);
+        drive_coid_ = -1;
+    }
     if (gpio_base_ != MAP_DEVICE_FAILED) {
         munmap_device_io(gpio_base_, GPIO_REG_SPACE);
         gpio_base_ = MAP_DEVICE_FAILED;
@@ -78,6 +95,8 @@ bool UltrasonicNode::start() {
             pthread_mutex_unlock(shared_mutex_);
         }
 
+        updateEmergencyStop(valid, distance_cm);
+
         // Print one human-readable distance line every ~1s (loop is 10Hz).
         log_divider++;
         if (log_divider >= 10) {
@@ -106,7 +125,7 @@ bool UltrasonicNode::initSharedState() {
         return false;
     }
 
-    const size_t map_size = sizeof(UltrasonicSharedState) + sizeof(pthread_mutex_t);
+    const size_t map_size = sharedMapSize();
     if (ftruncate(shm_fd_, static_cast<off_t>(map_size)) == -1) {
         std::cerr << "[UltrasonicNode] ftruncate failed: " << strerror(errno) << std::endl;
         return false;
@@ -120,7 +139,7 @@ bool UltrasonicNode::initSharedState() {
 
     shared_state_ = reinterpret_cast<UltrasonicSharedState*>(addr);
     shared_mutex_ = reinterpret_cast<pthread_mutex_t*>(
-        reinterpret_cast<char*>(addr) + sizeof(UltrasonicSharedState));
+        reinterpret_cast<char*>(addr) + alignedMutexOffset());
 
     pthread_mutexattr_t attr;
     pthread_mutexattr_init(&attr);
@@ -139,7 +158,7 @@ bool UltrasonicNode::initSharedState() {
 
 void UltrasonicNode::cleanupSharedState() {
     if (shared_state_ != nullptr) {
-        const size_t map_size = sizeof(UltrasonicSharedState) + sizeof(pthread_mutex_t);
+        const size_t map_size = sharedMapSize();
         munmap(shared_state_, map_size);
         shared_state_ = nullptr;
         shared_mutex_ = nullptr;
@@ -149,6 +168,42 @@ void UltrasonicNode::cleanupSharedState() {
         close(shm_fd_);
         shm_fd_ = -1;
     }
+}
+
+bool UltrasonicNode::connectDriveIpc() {
+    if (drive_coid_ != -1) {
+        return true;
+    }
+    drive_coid_ = name_open(IPC_DRIVE_CHANNEL, 0);
+    return drive_coid_ != -1;
+}
+
+void UltrasonicNode::updateEmergencyStop(bool distance_valid, uint32_t distance_cm) {
+    const uint32_t estop_threshold_cm = 25;
+    bool should_engage = distance_valid && (distance_cm < estop_threshold_cm);
+
+    if (should_engage == estop_engaged_) {
+        return;
+    }
+
+    if (!connectDriveIpc()) {
+        return;
+    }
+
+    EmergencyStopCommandMsg msg{};
+    msg.msg_type = MSG_TYPE_EMERGENCY_STOP;
+    msg.engage = should_engage ? 1 : 0;
+
+    int result = MsgSend(drive_coid_, &msg, sizeof(msg), nullptr, 0);
+    if (result == -1) {
+        name_close(drive_coid_);
+        drive_coid_ = -1;
+        return;
+    }
+
+    estop_engaged_ = should_engage;
+    std::cout << "[UltrasonicNode] E-STOP " << (estop_engaged_ ? "ENGAGED" : "CLEARED")
+              << " at distance " << distance_cm << " cm" << std::endl;
 }
 
 bool UltrasonicNode::initGpio() {

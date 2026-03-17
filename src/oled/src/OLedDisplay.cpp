@@ -20,6 +20,16 @@ extern volatile sig_atomic_t g_shutdown_requested;
 #define OLED_WIDTH 128
 #define OLED_HEIGHT 64
 
+static size_t alignedMutexOffset() {
+    const size_t a = alignof(pthread_mutex_t);
+    const size_t n = sizeof(UltrasonicSharedState);
+    return (n + (a - 1)) & ~(a - 1);
+}
+
+static size_t sharedMapSize() {
+    return alignedMutexOffset() + sizeof(pthread_mutex_t);
+}
+
 // Standard 5x8 ASCII Font (Characters 32-127)
 static const uint8_t font5x8[96][5] = {
     {0x00,0x00,0x00,0x00,0x00}, {0x00,0x00,0x5F,0x00,0x00}, {0x00,0x07,0x00,0x07,0x00}, //   ! "
@@ -82,7 +92,7 @@ OledDisplay::~OledDisplay() {
     if (i2c_fd_ >= 0) close(i2c_fd_);
 
     if (ultrasonic_state_ != nullptr) {
-        size_t map_size = sizeof(UltrasonicSharedState) + sizeof(pthread_mutex_t);
+        size_t map_size = sharedMapSize();
         munmap(ultrasonic_state_, map_size);
         ultrasonic_state_ = nullptr;
         ultrasonic_mutex_ = nullptr;
@@ -277,7 +287,7 @@ bool OledDisplay::start() {
         std::cerr << "[OledDisplay] Ultrasonic shared memory unavailable: " << strerror(errno) << std::endl;
         ultrasonic_available_ = false;
     } else {
-        size_t map_size = sizeof(UltrasonicSharedState) + sizeof(pthread_mutex_t);
+        size_t map_size = sharedMapSize();
         void* ptr = mmap(nullptr, map_size, PROT_READ | PROT_WRITE, MAP_SHARED, ultrasonic_shm_fd_, 0);
         if (ptr == MAP_FAILED) {
             std::cerr << "[OledDisplay] Ultrasonic mmap failed: " << strerror(errno) << std::endl;
@@ -287,7 +297,7 @@ bool OledDisplay::start() {
         } else {
             ultrasonic_state_ = reinterpret_cast<UltrasonicSharedState*>(ptr);
             ultrasonic_mutex_ = reinterpret_cast<pthread_mutex_t*>(
-                reinterpret_cast<char*>(ptr) + sizeof(UltrasonicSharedState));
+                reinterpret_cast<char*>(ptr) + alignedMutexOffset());
             ultrasonic_available_ = true;
         }
     }
@@ -346,18 +356,47 @@ void OledDisplay::stop() {
 }
 
 void OledDisplay::processTimerPulse() {
-    if (ultrasonic_available_ && ultrasonic_state_ && ultrasonic_mutex_) {
-        if (pthread_mutex_lock(ultrasonic_mutex_) == 0) {
-            distance_valid_ = (ultrasonic_state_->valid != 0);
-            if (distance_valid_) {
-                distance_cm_ = ultrasonic_state_->last_distance_cm;
+    // Boot-up resilience: OLED may start before ultrasonic creates shared memory.
+    // Keep retrying attach each pulse until it succeeds.
+    if (!ultrasonic_available_ && ultrasonic_shm_fd_ == -1) {
+        ultrasonic_shm_fd_ = shm_open(ULTRASONIC_SHM_NAME, O_RDWR, 0);
+        if (ultrasonic_shm_fd_ != -1) {
+            size_t map_size = sharedMapSize();
+            void* ptr = mmap(nullptr, map_size, PROT_READ | PROT_WRITE, MAP_SHARED, ultrasonic_shm_fd_, 0);
+            if (ptr == MAP_FAILED) {
+                close(ultrasonic_shm_fd_);
+                ultrasonic_shm_fd_ = -1;
+            } else {
+                ultrasonic_state_ = reinterpret_cast<UltrasonicSharedState*>(ptr);
+                ultrasonic_mutex_ = reinterpret_cast<pthread_mutex_t*>(
+                    reinterpret_cast<char*>(ptr) + alignedMutexOffset());
+                ultrasonic_available_ = true;
+                std::cout << "[OledDisplay] Connected to ultrasonic shared memory." << std::endl;
             }
-            pthread_mutex_unlock(ultrasonic_mutex_);
-        } else {
-            distance_valid_ = false;
+        }
+    }
+
+    if (ultrasonic_available_ && ultrasonic_state_) {
+        // Read a snapshot without locking to avoid blocking on cross-process
+        // mutex state during boot/restarts. For this small struct, occasional
+        // torn reads are acceptable and quickly corrected next pulse.
+        distance_valid_ = (ultrasonic_state_->valid != 0);
+        if (distance_valid_) {
+            distance_cm_ = ultrasonic_state_->last_distance_cm;
         }
     } else {
         distance_valid_ = false;
+    }
+
+    static int oled_debug_counter = 0;
+    oled_debug_counter++;
+    if (oled_debug_counter >= 2) { // every ~2 seconds
+        oled_debug_counter = 0;
+        if (distance_valid_) {
+            std::cout << "[OledDisplay] Drawing Distance : " << distance_cm_ << " cm" << std::endl;
+        } else {
+            std::cout << "[OledDisplay] Drawing Distance : --- cm" << std::endl;
+        }
     }
 
     renderUI();
