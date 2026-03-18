@@ -8,3 +8,4 @@ A QNX-based real-time safety system for a Raspberry Pi–powered RC car. The pro
 - The pi has a static ip of 192.168.7.2, a username of `qnxuser` and a password of `qnxuser`.
 - Can ssh with `ssh qnxuser@192.168.7.2` then password `qnxuser`.
 - Or copy a binary to it with `scp src/drive/build/aarch64le-debug/drive.aarch64le.bin qnxuser@192.168.7.2:/tmp`
+- src/ultrasonic/src/UltrasonicNode.cpp [estop_threshold_cm: change distance till power cut]
