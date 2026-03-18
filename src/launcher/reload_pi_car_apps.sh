@@ -151,6 +151,21 @@ fi
 echo "Applying execute permissions..."
 chmod +x $APP_DIR/*.bin
 
+echo "Starting UART serial driver for IMU..."
+
+slay devc-serminiuart >/dev/null 2>&1
+sleep 1
+
+devc-serminiuart -b115200 -c480000000 -e -F -u1 0xfe215000,125 &
+sleep 1
+
+if [ ! -e /dev/ser1 ]; then
+    echo "[ERROR] /dev/ser1 not available after starting devc-serminiuart."
+    exit 1
+fi
+
+echo "[OK] UART serial driver ready at /dev/ser1."
+
 # --- 4. STARTUP PHASE ---
 for app in $APPS_TO_MANAGE; do
     if [ -n "$app" ]; then
