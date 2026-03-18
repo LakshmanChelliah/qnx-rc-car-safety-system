@@ -56,19 +56,27 @@
     <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_LOCAL_NAME.1" value="${workspace_loc:qnx-rc-car-safety-system}/drive/build/aarch64le-debug/drive.aarch64le.bin"/>
     <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_LOCAL_NAME.2" value="${workspace_loc:qnx-rc-car-safety-system}/launcher/build/aarch64le-debug/reload_pi_car_apps.aarch64le.bin"/>
     <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_LOCAL_NAME.3" value="${workspace_loc:qnx-rc-car-safety-system}/oled/build/aarch64le-debug/oled.aarch64le.bin"/>
+    <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_LOCAL_NAME.4" value="${workspace_loc:qnx-rc-car-safety-system}/ultrasonic/build/aarch64le-debug/ultrasonic.aarch64le.bin"/>
+    <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_LOCAL_NAME.5" value="${workspace_loc:qnx-rc-car-safety-system}/crash_detection/build/aarch64le-debug/crash_detection.aarch64le.bin"/>
     <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_REMOTE_PATH.0" value="/fs/apps"/>
     <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_REMOTE_PATH.1" value="/fs/apps"/>
     <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_REMOTE_PATH.2" value="/fs/apps"/>
     <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_REMOTE_PATH.3" value="/fs/apps"/>
+    <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_REMOTE_PATH.4" value="/fs/apps"/>
+    <stringAttribute key="com.qnx.tools.ide.qde.core.LIB_REMOTE_PATH.5" value="/fs/apps"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_STRIP.0" value="true"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_STRIP.1" value="true"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_STRIP.2" value="true"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_STRIP.3" value="true"/>
+    <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_STRIP.4" value="true"/>
+    <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_STRIP.5" value="true"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_UPLOAD.0" value="true"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_UPLOAD.1" value="true"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_UPLOAD.2" value="true"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_UPLOAD.3" value="true"/>
-    <intAttribute key="com.qnx.tools.ide.qde.core.NUM_UPLOAD_LIBS" value="4"/>
+    <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_UPLOAD.4" value="true"/>
+    <booleanAttribute key="com.qnx.tools.ide.qde.core.LIB_TO_UPLOAD.5" value="true"/>
+    <intAttribute key="com.qnx.tools.ide.qde.core.NUM_UPLOAD_LIBS" value="6"/>
     <listAttribute key="com.qnx.tools.ide.qde.core.SOLIB_PATH"/>
     <listAttribute key="com.qnx.tools.ide.qde.core.SOLIB_PATH_SAVE"/>
     <booleanAttribute key="com.qnx.tools.ide.qde.core.STRIP_BEFORE_UPLOAD" value="true"/>
