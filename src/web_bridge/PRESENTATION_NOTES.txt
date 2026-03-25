@@ -1,0 +1,202 @@
+================================================================================
+  WEB BRIDGE — PRESENTATION NOTES
+  (Praveen's Part: Web App Control Interface for the QNX RC Car)
+================================================================================
+
+
+1. WHAT IS THE WEB BRIDGE?
+--------------------------------------------------------------------------------
+The web_bridge is a lightweight HTTP server that runs directly on the
+Raspberry Pi under QNX Neutrino (the same RTOS all the other modules run on).
+It serves a web page to any device connected to the Pi's Wi-Fi and translates
+browser actions into QNX IPC messages that the rest of the system understands.
+
+In simple terms: it is the BRIDGE between a phone/laptop web browser and the
+car's real-time control system.
+
+   Phone/laptop  ---(HTTP over Wi-Fi)-->  web_bridge  ---(QNX IPC)-->  drive controller
+                                              |
+                                              +---(POSIX shared memory)-->  ultrasonic sensor data
+                                              +---(file read)-->  crash detection log
+
+
+2. HOW IT WORKS — STEP BY STEP
+--------------------------------------------------------------------------------
+
+  a) Startup
+     - The web_bridge binary is deployed to /fs/apps on the Pi by the launcher
+       (deploy_reload_all.launch configuration).
+     - It is listed in MANAGED_APPS (executables.hpp), so the launcher shell
+       script starts it automatically alongside joystick, ultrasonic, oled,
+       crash_detection, and drive.
+     - On startup it tries to connect to the drive controller's IPC channel
+       ("drive_controller_cmd") using QNX's name_open(). If the drive
+       controller is not running yet, it does NOT crash — it starts the HTTP
+       server anyway and retries the IPC connection lazily when a command is
+       actually sent (ensure_drive_connection()).
+
+  b) Listening
+     - Opens a TCP socket on port 8080, bound to all interfaces (0.0.0.0).
+     - Sits in an accept loop waiting for HTTP connections.
+
+  c) Serving the Control Page
+     - When a browser hits http://192.168.7.2:8080/ it receives a full HTML
+       page with embedded CSS and JavaScript — no external files needed.
+     - The page includes:
+         * A virtual joystick (touch + mouse) for driving
+         * "Take Control" / "Release" buttons
+         * An emergency stop toggle
+         * Live ultrasonic distance readout
+         * A crash detection log panel with ON/OFF toggle
+
+  d) Handling API Requests
+     - The browser's JavaScript sends fetch() GET requests to these endpoints:
+
+       ENDPOINT                  WHAT IT DOES
+       ──────────────────────    ──────────────────────────────────────────────
+       /drive?left=X&right=Y    Sends a DriveSpeedCommandMsg via QNX MsgSend
+       /set_source?source=2     Sends a DriveControlCommandMsg (SOURCE_WEBAPP)
+       /estop?engage=1          Sends an EmergencyStopCommandMsg
+       /status                  Reads ultrasonic shared memory, returns JSON
+       /crash_log               Reads crash_detection.log, returns last 20 lines as JSON
+
+
+3. HOW IT CONNECTS TO THE OTHER PARTS
+--------------------------------------------------------------------------------
+
+  ┌──────────────┐     QNX IPC (MsgSend)      ┌──────────────────┐
+  │  web_bridge  │  ─────────────────────────> │ DriveController  │
+  │  (port 8080) │   DriveSpeedCommandMsg      │ (drive module)   │
+  │              │   DriveControlCommandMsg     │                  │
+  │              │   EmergencyStopCommandMsg    │                  │
+  └──────┬───────┘                             └────────┬─────────┘
+         │                                              │
+         │  POSIX shared memory                         │  I2C bus
+         │  (/ultrasonic_shm, read-only)                │
+         v                                              v
+  ┌──────────────┐                             ┌──────────────────┐
+  │  Ultrasonic  │                             │  PCA9685 Motor   │
+  │  Sensor Node │                             │  Driver (motors) │
+  └──────────────┘                             └──────────────────┘
+         │
+         │  Crash detection is a SEPARATE process
+         │  that logs to /fs/apps/crash_detection.log
+         v
+  ┌──────────────┐
+  │    Crash     │  (web_bridge reads this log file and sends it to the browser)
+  │  Detection   │
+  └──────────────┘
+
+  KEY INTEGRATION POINTS:
+
+  a) Drive Controller (teammates' code)
+     - Uses the shared IPC message structures defined in common/include/ipc.h
+       (DriveSpeedCommandMsg, DriveControlCommandMsg, EmergencyStopCommandMsg).
+     - Connects via name_open("drive_controller_cmd") — same channel name the
+       joystick module uses. This means the web app and physical joystick
+       use the exact same protocol.
+     - The drive controller has a "source" system: SOURCE_USB_JOYSTICK = 1,
+       SOURCE_WEBAPP = 2. The web app sends source=2 so the drive controller
+       knows commands are coming from the web interface.
+
+  b) Ultrasonic Sensor (teammates' code)
+     - The ultrasonic module writes sensor readings to POSIX shared memory
+       at /ultrasonic_shm (defined in common/include/ultrasonic.h).
+     - The web_bridge maps this shared memory read-only using shm_open()
+       and mmap(), then reads last_distance_cm and valid fields.
+     - This is a zero-copy, lock-free read — very fast, no IPC overhead.
+     - The /status endpoint returns this data as JSON so the browser can
+       display it in real time (polled every 250ms).
+
+  c) Crash Detection (teammates' code)
+     - The crash_detection module reads an IMU (BNO055) over UART and logs
+       crash events to /fs/apps/crash_detection.log.
+     - The web_bridge reads this log file when /crash_log is requested
+       and returns the last 20 lines as a JSON array.
+     - The UI has an ON/OFF toggle that starts/stops polling this endpoint
+       every 1.2 seconds.
+     - When a NEW crash is detected while monitoring is ON, the web app
+       AUTOMATICALLY engages the e-stop (sends EmergencyStopCommandMsg
+       with engage=1) and shows a full-width red alert banner with the
+       impact direction (Front/Back/Left/Right shown as an arrow).
+     - The user presses a single "CLEAR CRASH STOP" button to clear the
+       e-stop and dismiss the alert — no need to engage then clear.
+     - The crash log displays each event as a styled card showing:
+         * Direction arrow + label (e.g. "Front Impact")
+         * Wall-clock timestamp
+         * Raw sensor values (ax, ay, az, dmag) in small monospace text
+     - Service messages (starting/stopping) are shown as blue cards.
+
+  d) Launcher (teammates' code)
+     - web_bridge.aarch64le.bin is in the MANAGED_APPS list in
+       executables.hpp, so the launcher starts it automatically.
+     - The deploy_reload_all.launch configuration uploads it to /fs/apps
+       on the Pi alongside all other binaries.
+
+
+4. TECHNOLOGIES USED
+--------------------------------------------------------------------------------
+  - Language: C++ (compiled with q++ for QNX Neutrino RTOS)
+  - Networking: POSIX sockets (TCP, port 8080)
+  - IPC: QNX Neutrino native messaging (MsgSend / name_open)
+  - Shared memory: POSIX shm_open + mmap
+  - Frontend: Embedded HTML/CSS/JavaScript (no external dependencies)
+  - Touch input: Pointer Events API (works on phone + desktop)
+  - Build system: QNX recursive Makefiles
+
+
+5. DESIGN DECISIONS & WHY
+--------------------------------------------------------------------------------
+
+  Q: Why embed HTML in C++ instead of serving files?
+  A: The QNX image on the Pi has limited storage and no filesystem server
+     for static files. Embedding everything in one binary means zero
+     dependencies — just deploy and run.
+
+  Q: Why lazy IPC connection?
+  A: If the drive controller hasn't started yet, the web server would
+     crash on startup and you'd have to figure out startup ordering.
+     With lazy connection, the web page is always accessible and commands
+     start working as soon as the drive controller is up.
+
+  Q: Why use QNX IPC instead of just writing to the motor directly?
+  A: The drive controller is the single authority over motor control.
+     Multiple sources (joystick, web app, crash detection e-stop) all
+     send messages to it, and it manages priority and arbitration.
+     This is a core real-time safety pattern.
+
+  Q: Why read the crash log as a file instead of IPC?
+  A: The crash_detection module is a standalone process that logs to a
+     file. Reading the file is the simplest integration — no changes
+     needed to the crash_detection code. It's also resilient: even if
+     crash_detection restarts, the log persists.
+
+
+6. QUICK DEMO SCRIPT
+--------------------------------------------------------------------------------
+  1. Power on the Pi, connect your phone/laptop to the Pi's Wi-Fi.
+  2. Open a browser and go to http://192.168.7.2:8080
+  3. Press "Take Control" — this tells the drive controller that
+     commands are now coming from the web app (SOURCE_WEBAPP = 2).
+  4. Use the virtual joystick to drive:
+       - Push UP    = both motors forward
+       - Push DOWN  = both motors reverse
+       - Push LEFT  = left motor forward, right motor reverse (turn)
+       - Push RIGHT = opposite (turn the other way)
+       - Let go     = both motors stop (auto-centers)
+  5. The distance readout updates in real time from the ultrasonic sensor.
+  6. Toggle "Crash Detection" ON to see live crash events from the IMU.
+  7. Press "EMERGENCY STOP" to engage e-stop (button changes to
+     "CLEAR E-STOP" to disengage).
+  8. Press "Release" to give control back to the joystick.
+
+
+7. FILES I WORKED ON
+--------------------------------------------------------------------------------
+  src/web_bridge/src/web_bridge.cpp   — The entire web bridge server
+  src/web_bridge/Makefile             — Build configuration
+  src/common/include/executables.hpp  — Added web_bridge to MANAGED_APPS
+  src/launcher/launch_configurations/deploy_reload_all.launch
+                                      — Added web_bridge to deployment list
+
+================================================================================
