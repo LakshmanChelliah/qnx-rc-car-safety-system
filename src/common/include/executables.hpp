@@ -9,6 +9,7 @@ const std::vector<std::string> MANAGED_APPS = {
     "ultrasonic.aarch64le.bin",
     "oled.aarch64le.bin",
 	"crash_detection.aarch64le.bin",
+	"web_bridge.aarch64le.bin",
 };
 
 const std::string DRIVE_APP = "drive.aarch64le.bin";
